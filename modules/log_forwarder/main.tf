@@ -13,6 +13,8 @@ locals {
   zip_url       = "https://github.com/DataDog/datadog-serverless-functions/releases/download/aws-dd-forwarder-${var.forwarder_version}/aws-dd-forwarder-${var.forwarder_version}.zip"
   zip_name      = "aws-dd-forwarder-${var.forwarder_version}.zip"
   forwarder_zip = "${path.module}/${local.zip_name}"
+
+  get_object_resource_statements = [ for bucket in var.s3_log_bucket_arns : "${bucket}/*" ]
 }
 
 data "aws_caller_identity" "current" {}
@@ -96,7 +98,7 @@ resource "aws_iam_policy" "this" {
     {
       vpc_check             = var.subnet_ids != null
       s3_check              = length(var.s3_log_bucket_arns) > 0
-      s3_log_bucket_arns    = jsonencode(var.s3_log_bucket_arns)
+      s3_log_bucket_arns    = jsonencode(local.get_object_resource_statements)
       datadog_s3_bucket     = "arn:aws:s3:::${local.bucket_name}"
       dd_api_key_secret_arn = var.dd_api_key_secret_arn
     }
